@@ -1,0 +1,50 @@
+app = "sixty-six-card-game"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  DATABASE_URL = "sqlite:///data/sixty-six.db"
+  HOST = "0.0.0.0"
+  PORT = "3000"
+  PUBLIC_BASE_URL = "https://sixty-six-card-game.fly.dev"
+
+[deploy]
+  strategy = "rolling"
+  max_unavailable = 1
+  wait_timeout = "10m"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+  [[http_service.checks]]
+    grace_period = "5s"
+    interval = "30s"
+    method = "GET"
+    timeout = "3s"
+    path = "/health"
+
+[mounts]
+  source = "sixty_six_data"
+  destination = "/data"
+  initial_size = "1GB"
+  snapshot_retention = 14
+  scheduled_snapshots = true
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpus = 1
+  cpu_kind = "shared"
+
