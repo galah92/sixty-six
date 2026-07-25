@@ -550,6 +550,26 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
         && deal.trick.is_empty()
         && (state.settings.score_visibility == ScoreVisibility::Traditional
             || deal.card_points[viewer.index()] >= 66);
+    let marriage_options = if viewer_turn {
+        Suit::ALL
+            .into_iter()
+            .filter_map(|suit| {
+                let card = hand
+                    .iter()
+                    .copied()
+                    .find(|card| card.suit == suit && deal.can_announce_marriage(viewer, *card))?;
+                let value = deal.marriage_value(card)?;
+                let can_declare_with_marriage = state.settings.score_visibility
+                    == ScoreVisibility::Traditional
+                    || (deal.tricks_won[viewer.index()] > 0
+                        && deal.card_points[viewer.index()] + value >= 66);
+                Some((suit, value, can_declare_with_marriage))
+            })
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+    let has_marriage = !marriage_options.is_empty();
 
     view! {
         <section
@@ -567,7 +587,7 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                     hx-post=(bot_url)
                     hx-trigger="load delay:650ms"
                     hx-target="#game-board"
-                    hx-swap="outerHTML"
+                    hx-swap="outerHTML transition:true"
                 >
                     <input type="hidden" name="revision" value=(room.revision)>
                 </form>
@@ -733,29 +753,74 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                 }
                             </div>
                         } else {
-                            <div class="hand" aria-label="Your cards">
-                                for card in hand {
-                                    {
-                                        let is_legal = viewer_turn && legal.contains(&card);
-                                        let marriage = deal.can_announce_marriage(viewer, card);
-                                        let marriage_value = deal.marriage_value(card).unwrap_or_default();
-                                        let can_marriage_declare = marriage
-                                            && (state.settings.score_visibility == ScoreVisibility::Traditional
-                                                || (deal.tricks_won[viewer.index()] > 0
-                                                    && deal.card_points[viewer.index()] + marriage_value >= 66));
-                                        (playable_card(
-                                            __cx,
-                                            &action_url,
-                                            room.revision,
-                                            card,
-                                            is_legal,
-                                            marriage,
-                                            can_marriage_declare,
-                                            marriage_value,
-                                        ).await?)
+                            <form
+                                method="post"
+                                action=(action_url.as_str())
+                                hx-post=(action_url.as_str())
+                                hx-target="#game-board"
+                                hx-swap="outerHTML transition:true"
+                                class="play-form"
+                            >
+                                <input type="hidden" name="revision" value=(room.revision)>
+                                <input type="hidden" name="action" value="play">
+                                <div class="hand" aria-label="Your cards">
+                                    for card in hand {
+                                        {
+                                            let is_legal = viewer_turn && legal.contains(&card);
+                                            let marriage = deal.can_announce_marriage(viewer, card);
+                                            let marriage_value = deal.marriage_value(card).unwrap_or_default();
+                                            (selectable_card(
+                                                __cx,
+                                                card,
+                                                is_legal,
+                                                marriage,
+                                                marriage_value,
+                                            ).await?)
+                                        }
                                     }
+                                </div>
+                                if viewer_turn {
+                                    <div class="selection-panel">
+                                        <p class="selection-prompt">"Tap a card to select it"</p>
+                                        <p class="selected-prompt">"Card selected · choose an action"</p>
+                                        if has_marriage {
+                                            <p class="marriage-tip">
+                                                "Marriage available · select a marked king or queen"
+                                            </p>
+                                        }
+                                        <div class="selection-actions">
+                                            <button
+                                                type="submit"
+                                                name="intent"
+                                                value="play"
+                                                class="play-selected"
+                                            >
+                                                "Play selected card"
+                                            </button>
+                                            for (suit, value, can_declare_with_marriage) in marriage_options {
+                                                <button
+                                                    type="submit"
+                                                    name="intent"
+                                                    value="marriage"
+                                                    class=(format!("marriage-choice {}", suit.name()))
+                                                >
+                                                    (("Announce ", suit.symbol(), " marriage · +", value))
+                                                </button>
+                                                if can_declare_with_marriage {
+                                                    <button
+                                                        type="submit"
+                                                        name="intent"
+                                                        value="marriage_declare"
+                                                        class=(format!("marriage-choice marriage-declare-choice {}", suit.name()))
+                                                    >
+                                                        (("Announce ", suit.symbol(), " marriage & declare 66"))
+                                                    </button>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
                                 }
-                            </div>
+                            </form>
                             if viewer_turn {
                                 <div class="table-actions">
                                     if deal.can_exchange_trump(viewer) {
@@ -777,42 +842,56 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-async fn playable_card(
+async fn selectable_card(
     __cx: &Cx,
-    action_url: &str,
-    revision: i64,
     card: Card,
     legal: bool,
     marriage: bool,
-    can_marriage_declare: bool,
     marriage_value: u16,
 ) -> Result {
     let color = if card.suit.is_red() { "red" } else { "black" };
-    let class = if legal {
+    let card_class = if legal {
         format!("card-face hand-card {color} legal")
     } else {
         format!("card-face hand-card {color}")
     };
+    let choice_class = if marriage && legal {
+        format!("card-choice marriage-{}", card.suit.name())
+    } else {
+        "card-choice".to_owned()
+    };
+    let choice_id = format!("select-{}", card.ascii_code());
+    let card_id = format!("card-{}", card.ascii_code());
+    let transition_style = format!(
+        "view-transition-name: card-{}",
+        card.ascii_code().to_ascii_lowercase()
+    );
+    let choice_label = if marriage && legal {
+        format!(
+            "Select {}; {} point marriage available",
+            card.accessible_name(),
+            marriage_value
+        )
+    } else {
+        format!("Select {}", card.accessible_name())
+    };
     view! {
-        <form
-            method="post"
-            action=(action_url)
-            hx-post=(action_url)
-            hx-target="#game-board"
-            hx-swap="outerHTML"
-            class="card-form"
-        >
-            <input type="hidden" name="revision" value=(revision)>
-            <input type="hidden" name="action" value="play">
-            <input type="hidden" name="card" value=(card.ascii_code())>
-            <button
-                type="submit"
-                name="intent"
-                value="play"
-                class=(class)
-                aria-label=(format!("Play {}", card.accessible_name()))
+        <div class="card-option">
+            <input
+                type="radio"
+                id=(choice_id.as_str())
+                name="card"
+                value=(card.ascii_code())
+                class=(choice_class)
+                aria-label=(choice_label)
+                required=(legal)
                 disabled=(!legal)
+            >
+            <label
+                id=(card_id)
+                class=(card_class)
+                for=(choice_id.as_str())
+                style=(transition_style)
             >
                 <span class="corner">
                     <strong>(card.rank.symbol())</strong><span>(card.suit.symbol())</span>
@@ -821,29 +900,11 @@ async fn playable_card(
                 <span class="corner bottom">
                     <strong>(card.rank.symbol())</strong><span>(card.suit.symbol())</span>
                 </span>
-            </button>
-            if marriage && legal {
-                <button
-                    class="marriage-action"
-                    type="submit"
-                    name="intent"
-                    value="marriage"
-                    aria-label=(format!("Play {} and announce a {} point marriage", card.accessible_name(), marriage_value))
-                >
-                    (("+", marriage_value))
-                </button>
-                if can_marriage_declare {
-                    <button
-                        class="marriage-declare"
-                        type="submit"
-                        name="intent"
-                        value="marriage_declare"
-                    >
-                        "marry + 66"
-                    </button>
+                if marriage && legal {
+                    <span class="marriage-flag">"marriage"</span>
                 }
-            }
-        </form>
+            </label>
+        </div>
     }
 }
 
@@ -861,7 +922,7 @@ async fn simple_action_form(
             action=(action_url)
             hx-post=(action_url)
             hx-target="#game-board"
-            hx-swap="outerHTML"
+            hx-swap="outerHTML transition:true"
         >
             <input type="hidden" name="revision" value=(revision)>
             <input type="hidden" name="action" value=(action)>
@@ -872,9 +933,15 @@ async fn simple_action_form(
 
 async fn table_card(__cx: &Cx, card: Card, extra_class: &str) -> Result {
     let color = if card.suit.is_red() { "red" } else { "black" };
+    let transition_style = format!(
+        "view-transition-name: card-{}",
+        card.ascii_code().to_ascii_lowercase()
+    );
     view! {
         <div
+            id=(format!("card-{}", card.ascii_code()))
             class=(format!("card-face table-card {color} {extra_class}"))
+            style=(transition_style)
             aria-label=(card.accessible_name())
         >
             <span class="corner">

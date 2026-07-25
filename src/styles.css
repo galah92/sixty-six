@@ -41,6 +41,7 @@ input {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button {
@@ -834,71 +835,173 @@ legend {
   padding-top: 4px;
 }
 
-.card-form {
+.play-form {
+  display: grid;
+}
+
+.card-option {
   position: relative;
   width: clamp(50px, 16.2vw, 94px);
   flex: 0 0 auto;
   margin-left: clamp(-12px, -2.2vw, -3px);
 }
 
-.card-form:first-child {
+.card-option:first-child {
   margin-left: 0;
 }
 
+.card-choice {
+  position: absolute;
+  width: 1px;
+  min-height: 0;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+}
+
 .hand-card {
+  display: block;
   width: 100%;
   aspect-ratio: 0.69;
   padding: 0;
   font-size: clamp(17px, 5vw, 28px);
+  cursor: default;
   transition:
     transform 150ms ease,
     filter 150ms ease,
     box-shadow 150ms ease;
 }
 
-.hand-card:disabled {
-  cursor: not-allowed;
+.card-choice:disabled + .hand-card {
   filter: brightness(0.72) saturate(0.72);
 }
 
-.hand-card.legal:hover,
-.hand-card.legal:focus-visible {
-  z-index: 3;
-  transform: translateY(-9px);
-  box-shadow: 0 13px 25px rgba(0, 0, 0, 0.28);
+.hand-card.legal {
+  cursor: pointer;
 }
 
-.marriage-action,
-.marriage-declare {
+.card-choice:focus-visible + .hand-card {
+  outline: 3px solid rgba(215, 168, 62, 0.9);
+  outline-offset: 4px;
+}
+
+.card-choice:checked + .hand-card {
+  z-index: 4;
+  border-color: #f4d474;
+  transform: translateY(-14px);
+  box-shadow:
+    0 0 0 3px #f4d474,
+    0 16px 30px rgba(0, 0, 0, 0.32);
+}
+
+.hand-card.legal:active {
+  transform: translateY(-5px) scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hand-card.legal:hover {
+    z-index: 3;
+    transform: translateY(-9px);
+    box-shadow: 0 13px 25px rgba(0, 0, 0, 0.28);
+  }
+}
+
+.marriage-flag {
   position: absolute;
   z-index: 5;
-  border: 0;
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.23);
-}
-
-.marriage-action {
-  top: -7px;
-  right: -4px;
-  min-width: 31px;
-  height: 24px;
+  top: 7px;
+  right: 7px;
+  padding: 4px 7px;
   border-radius: 999px;
   background: var(--gold);
   color: #34270a;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-.marriage-declare {
-  right: -5px;
-  bottom: -7px;
-  min-width: 66px;
-  height: 23px;
-  border-radius: 6px;
+.selection-panel {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  min-height: 80px;
+  margin-top: 7px;
+  text-align: center;
+}
+
+.selection-panel p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.selection-prompt {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.selected-prompt {
+  display: none;
+  color: white;
+  font-weight: 750;
+}
+
+.marriage-tip {
+  color: #f4d474;
+}
+
+.selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.play-selected,
+.marriage-choice {
+  display: none;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.play-selected {
+  background: #f5f0df;
+  color: #17352c;
+}
+
+.marriage-choice {
+  background: var(--gold);
+  color: #34270a;
+}
+
+.marriage-declare-choice {
   background: #fff1bd;
-  color: #3e300e;
-  font-size: 8px;
-  font-weight: 850;
-  text-transform: uppercase;
+}
+
+.play-form:has(.card-choice:checked) .selection-prompt {
+  display: none;
+}
+
+.play-form:has(.card-choice:checked) .selected-prompt,
+.play-form:has(.card-choice:checked) .play-selected {
+  display: flex;
+}
+
+.play-form:has(.card-choice[class*="marriage-"]:checked) .marriage-tip {
+  display: none;
+}
+
+.play-form:has(.card-choice.marriage-clubs:checked) .marriage-choice.clubs,
+.play-form:has(.card-choice.marriage-diamonds:checked) .marriage-choice.diamonds,
+.play-form:has(.card-choice.marriage-hearts:checked) .marriage-choice.hearts,
+.play-form:has(.card-choice.marriage-spades:checked) .marriage-choice.spades {
+  display: flex;
 }
 
 .table-actions {
@@ -912,10 +1015,10 @@ legend {
 
 .table-action,
 .declare-action {
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 11px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 13px;
 }
 
 .table-action {
@@ -1010,7 +1113,17 @@ legend {
   }
 
   .table {
-    min-height: min(760px, calc(100vh - 130px));
+    min-height: clamp(640px, calc(100dvh - 130px), 900px);
+  }
+
+  .game-topbar {
+    min-height: 58px;
+    font-size: 14px;
+  }
+
+  .score-mode,
+  .area-label {
+    font-size: 12px;
   }
 
   .opponent-zone {
@@ -1019,6 +1132,10 @@ legend {
 
   .opponent-hand {
     height: 72px;
+  }
+
+  .card-back {
+    font-size: 12px;
   }
 
   .card-back.mini {
@@ -1037,17 +1154,41 @@ legend {
   }
 
   .player-meta {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .presence,
   .card-points {
-    font-size: 11px;
+    font-size: 13px;
+  }
+
+  .turn-status {
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+
+  .trump-marker {
+    font-size: 13px;
+  }
+
+  .marriage-flag {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  .selection-panel p {
+    font-size: 15px;
   }
 
   .hand {
     min-height: 154px;
   }
+}
+
+::view-transition-group(*) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1058,5 +1199,9 @@ legend {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
   }
 }
