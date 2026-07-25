@@ -194,7 +194,7 @@ async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result {
                 </header>
                 <main>(slot.await?)</main>
                 <footer>
-                    <span>"24 cards · 2 players · first to 7"</span>
+                    <a href="https://github.com/galah92/sixty-six">"Source code on GitHub"</a>
                 </footer>
             </body>
         </html>

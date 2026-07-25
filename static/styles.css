@@ -107,9 +107,11 @@ footer {
   padding: 28px 20px;
   text-align: center;
   color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+}
+
+footer a {
+  text-underline-offset: 4px;
 }
 
 body:has(.game-shell) {
