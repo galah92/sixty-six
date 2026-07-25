@@ -22,7 +22,7 @@ use topcoat::{
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
-const STYLES_VERSION: &str = "20260725-2";
+const STYLES_VERSION: &str = "20260725-3";
 
 #[derive(Clone)]
 struct App {
@@ -637,17 +637,17 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                         <div class="player-meta">
                             <div>
                                 <span class="player-name">(opponent_name)</span>
-                                <span class="presence">
-                                    if room.mode == RoomMode::Computer {
-                                        "computer"
-                                    } else if room.last_seen_at[opponent.index()]
+                                if room.mode == RoomMode::Friend {
+                                    <span class="presence">
+                                        if room.last_seen_at[opponent.index()]
                                         .is_some_and(|seen| now_epoch() - seen < 8)
-                                    {
-                                        "online"
-                                    } else {
-                                        "away"
-                                    }
-                                </span>
+                                        {
+                                            "online"
+                                        } else {
+                                            "away"
+                                        }
+                                    </span>
+                                }
                             </div>
                             <span class="card-points">
                                 if show_scores {
@@ -666,13 +666,21 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
 
                     <section class="table-center" aria-label="Current trick and stock">
                         <div class="trick-area">
-                            <span class="area-label">
-                                if deal.trick.is_empty() && deal.last_trick.is_some() {
-                                    "last trick"
+                            if deal.trick.is_empty() {
+                                if let Some(last) = &deal.last_trick {
+                                    <span class="area-label trick-result">
+                                        if last.winner == viewer {
+                                            (("You won · +", last.points))
+                                        } else {
+                                            ((opponent_name, " won · +", last.points))
+                                        }
+                                    </span>
                                 } else {
-                                    "current trick"
+                                    <span class="area-label">"current trick"</span>
                                 }
-                            </span>
+                            } else {
+                                <span class="area-label">"current trick"</span>
+                            }
                             <div class="trick-slots">
                                 if deal.trick.is_empty() {
                                     if let Some(last) = &deal.last_trick {
@@ -720,12 +728,14 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                     </section>
 
                     <section class="you-zone" aria-label="Your hand">
-                        <div class=(status_class) role="status">
-                            <span class="turn-dot" aria-hidden="true"></span>
-                            <strong>(status)</strong>
-                        </div>
                         <div class="player-meta you-meta">
-                            <span class="player-name">((viewer_name, " · you"))</span>
+                            <div class="you-heading">
+                                <span class="player-name">"You"</span>
+                                <div class=(status_class) role="status">
+                                    <span class="turn-dot" aria-hidden="true"></span>
+                                    <strong>(status)</strong>
+                                </div>
+                            </div>
                             <span class="card-points">
                                 if show_scores {
                                     ((deal.card_points[viewer.index()], " card points"))
@@ -798,7 +808,8 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                                 value="play"
                                                 class="play-selected"
                                             >
-                                                "Play card"
+                                                <span class="action-label-wide">"Play card"</span>
+                                                <span class="action-label-mobile">"Play"</span>
                                             </button>
                                             for (suit, value, can_declare_with_marriage) in marriage_options {
                                                 <button
@@ -807,7 +818,12 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                                     value="marriage"
                                                     class=(format!("marriage-choice {}", suit.name()))
                                                 >
-                                                    (("Announce ", suit.symbol(), " marriage · +", value))
+                                                    <span class="action-label-wide">
+                                                        (("Announce ", suit.symbol(), " marriage · +", value))
+                                                    </span>
+                                                    <span class="action-label-mobile">
+                                                        ((suit.symbol(), " marriage +", value))
+                                                    </span>
                                                 </button>
                                                 if can_declare_with_marriage {
                                                     <button
@@ -816,7 +832,12 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                                         value="marriage_declare"
                                                         class=(format!("marriage-choice marriage-declare-choice {}", suit.name()))
                                                     >
-                                                        (("Announce ", suit.symbol(), " marriage & declare 66"))
+                                                        <span class="action-label-wide">
+                                                            (("Announce ", suit.symbol(), " marriage & declare 66"))
+                                                        </span>
+                                                        <span class="action-label-mobile">
+                                                            ((suit.symbol(), " + declare 66"))
+                                                        </span>
                                                     </button>
                                                 }
                                             }

@@ -516,7 +516,7 @@ legend {
   gap: 12px;
   padding: 5px 4px 10px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -532,7 +532,7 @@ legend {
 }
 
 .score-mode {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .match-score {
@@ -643,7 +643,7 @@ legend {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .player-meta > div {
@@ -657,7 +657,7 @@ legend {
 .presence,
 .card-points {
   color: rgba(255, 255, 255, 0.62);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .opponent-hand {
@@ -721,10 +721,15 @@ legend {
 
 .area-label {
   color: rgba(255, 255, 255, 0.54);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.trick-result {
+  color: #f4d474;
+  letter-spacing: 0.05em;
 }
 
 .trick-slots {
@@ -801,7 +806,7 @@ legend {
   top: calc(50% + 64px);
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.62);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .empty-stock {
@@ -825,12 +830,12 @@ legend {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 0 auto 5px;
+  margin: 0;
   padding: 5px 11px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.18);
   color: rgba(255, 255, 255, 0.68);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .turn-status.yours {
@@ -849,6 +854,22 @@ legend {
   padding: 0 4px 7px;
 }
 
+.you-heading {
+  min-width: 0;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.you-heading .player-name,
+.you-heading .turn-status,
+.you-heading .turn-status strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .hand {
   display: flex;
   align-items: flex-end;
@@ -860,6 +881,7 @@ legend {
 
 .play-form {
   display: grid;
+  min-width: 0;
 }
 
 .card-option {
@@ -972,6 +994,10 @@ legend {
   gap: 8px;
 }
 
+.action-label-mobile {
+  display: none;
+}
+
 .play-selected,
 .marriage-choice {
   display: none;
@@ -1021,6 +1047,150 @@ legend {
   justify-content: center;
   gap: 7px;
   margin-top: 3px;
+}
+
+@media (max-width: 759px) {
+  .opponent-zone {
+    padding: 14px 14px 4px;
+  }
+
+  .opponent-hand {
+    height: 52px;
+    margin-top: 4px;
+  }
+
+  .card-back.mini {
+    width: 38px;
+    margin-left: -13px;
+  }
+
+  .table-center {
+    min-height: 170px;
+    gap: 8px;
+    padding: 4px 12px;
+  }
+
+  .you-zone {
+    padding: 6px 10px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .you-meta {
+    padding: 0 4px 4px;
+  }
+
+  .you-heading {
+    gap: 6px;
+  }
+
+  .you-meta .player-name {
+    white-space: nowrap;
+  }
+
+  .turn-status {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .hand {
+    min-height: 112px;
+    gap: 2px;
+    padding-top: 3px;
+  }
+
+  .card-option {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0;
+    margin-left: 0;
+  }
+
+  .card-option:first-child {
+    margin-left: 0;
+  }
+
+  .hand-card {
+    border-radius: 9px;
+    font-size: 20px;
+    box-shadow: 0 5px 14px rgba(7, 23, 18, 0.2);
+  }
+
+  .hand-card .corner {
+    top: 8px;
+    left: 9px;
+  }
+
+  .hand-card .corner span {
+    font-size: 0.82em;
+  }
+
+  .hand-card .corner.bottom {
+    display: none;
+  }
+
+  .hand-card .center-suit {
+    font-size: 1.5em;
+    opacity: 0.28;
+    transform: translateY(12%);
+  }
+
+  .card-choice:checked + .hand-card .center-suit {
+    opacity: 0.46;
+  }
+
+  .card-choice:checked + .hand-card {
+    transform: translateY(-8px);
+  }
+
+  .marriage-flag {
+    top: 5px;
+    right: 5px;
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+
+  .selection-panel {
+    height: 50px;
+    min-height: 50px;
+  }
+
+  .selection-actions {
+    gap: 5px;
+  }
+
+  .play-selected,
+  .marriage-choice {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .action-label-wide {
+    display: none;
+  }
+
+  .action-label-mobile {
+    display: inline;
+  }
+}
+
+@media (max-width: 340px) {
+  .selection-actions {
+    gap: 4px;
+  }
+
+  .play-selected,
+  .marriage-choice {
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .marriage-flag {
+    padding: 2px 4px;
+    font-size: 10px;
+  }
 }
 
 .table-action,
@@ -1272,6 +1442,16 @@ legend {
 ::view-transition-group(*) {
   animation-duration: 180ms;
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-group(root) {
+  animation-duration: 0.01ms;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 @media (prefers-reduced-motion: reduce) {
