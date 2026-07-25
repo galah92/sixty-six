@@ -681,6 +681,9 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                     (card_back(__cx, "stock").await?)
                                     if let Some(trump_card) = deal.trump_card {
                                         (table_card(__cx, trump_card, "trump-card").await?)
+                                        <span class="trump-marker">
+                                            ((deal.trump.symbol(), " trump"))
+                                        </span>
                                     }
                                 }
                             </div>
