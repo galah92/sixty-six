@@ -206,10 +206,9 @@ async fn home(cx: &Cx) -> Result {
     view! {
         <section class="home-shell">
             <div class="hero-copy">
-                <p class="eyebrow">"A sharp little trick-taking game"</p>
-                <h1>"Sixty-Six, without the table."</h1>
+                <h1>"Play Sixty-Six"</h1>
                 <p class="lede">
-                    "Play a full match against a thoughtful computer or send one private link to a friend. No account, no download."
+                    "Against the computer or a friend. No account needed."
                 </p>
                 <div class="hero-cards" aria-hidden="true">
                     (decorative_card(cx, Card::new(Suit::Hearts, Rank::Ace), "tilt-left").await?)
