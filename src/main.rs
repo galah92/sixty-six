@@ -1040,6 +1040,19 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                             }
                         }
                     </section>
+
+                    <section class="trick-piles" aria-label="Captured tricks">
+                        (captured_trick_pile(
+                            __cx,
+                            opponent_name,
+                            deal.tricks_won[opponent.index()],
+                        ).await?)
+                        (captured_trick_pile(
+                            __cx,
+                            "You",
+                            deal.tricks_won[viewer.index()],
+                        ).await?)
+                    </section>
                 </div>
             }
         </section>
@@ -1198,6 +1211,31 @@ async fn rule_card(__cx: &Cx, card: Card, extra_class: &str) -> Result {
             <span class="center-suit">(card.suit.symbol())</span>
             <span class="corner bottom">
                 <strong>(card.rank.symbol())</strong><span>(card.suit.symbol())</span>
+            </span>
+        </div>
+    }
+}
+
+async fn captured_trick_pile(__cx: &Cx, player: &str, tricks: u8) -> Result {
+    let count = match tricks {
+        1 => "1 trick".to_owned(),
+        _ => format!("{tricks} tricks"),
+    };
+
+    view! {
+        <div class="trick-pile" aria-label=(format!("{player}: {count}"))>
+            <div class="pile-cards" aria-hidden="true">
+                if tricks == 0 {
+                    <span class="empty-capture"></span>
+                } else {
+                    for _ in 0..tricks {
+                        (card_back(__cx, "captured").await?)
+                    }
+                }
+            </div>
+            <span class="pile-caption">
+                <strong>(player)</strong>
+                <small>(count)</small>
             </span>
         </div>
     }

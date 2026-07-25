@@ -810,7 +810,8 @@ legend {
 
 .opponent-zone,
 .you-zone,
-.table-center {
+.table-center,
+.trick-piles {
   position: relative;
   z-index: 1;
 }
@@ -903,6 +904,74 @@ legend {
 
 .card-back.mini:first-child {
   margin-left: 0;
+}
+
+.trick-piles {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 10vw, 72px);
+  padding: 8px 18px max(14px, env(safe-area-inset-bottom));
+}
+
+.trick-pile {
+  min-width: 112px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.pile-cards {
+  width: 62px;
+  height: 52px;
+  display: flex;
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.card-back.captured,
+.empty-capture {
+  width: 34px;
+  aspect-ratio: 0.69;
+  flex: 0 0 auto;
+  border-radius: 6px;
+}
+
+.card-back.captured {
+  margin-left: -28px;
+  border-width: 2px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  font-size: 7px;
+}
+
+.card-back.captured:first-child {
+  margin-left: 0;
+}
+
+.card-back.captured::before {
+  inset: 3px;
+  border-radius: 3px;
+}
+
+.empty-capture {
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+}
+
+.pile-caption {
+  display: grid;
+  gap: 2px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.pile-caption strong {
+  font-size: 13px;
+}
+
+.pile-caption small {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 11px;
 }
 
 .table-center {
@@ -1657,6 +1726,39 @@ legend {
 
   .hand {
     min-height: 154px;
+  }
+
+  .trick-piles {
+    gap: 72px;
+  }
+
+  .trick-pile {
+    min-width: 142px;
+    gap: 12px;
+  }
+
+  .pile-cards {
+    width: 84px;
+    height: 66px;
+  }
+
+  .card-back.captured,
+  .empty-capture {
+    width: 43px;
+    border-radius: 7px;
+  }
+
+  .card-back.captured {
+    margin-left: -35px;
+    font-size: 9px;
+  }
+
+  .pile-caption strong {
+    font-size: 14px;
+  }
+
+  .pile-caption small {
+    font-size: 12px;
   }
 }
 
