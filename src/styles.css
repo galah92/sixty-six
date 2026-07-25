@@ -454,69 +454,6 @@ legend {
   padding: clamp(24px, 5vw, 54px);
 }
 
-.rules-page h1 {
-  max-width: 700px;
-  font-size: clamp(42px, 8vw, 68px);
-}
-
-.rules-hero .lede {
-  max-width: 720px;
-}
-
-.rules-facts {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 28px;
-}
-
-.rules-facts span {
-  display: grid;
-  gap: 2px;
-  min-height: 76px;
-  align-content: center;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: #faf7ee;
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-}
-
-.rules-facts strong {
-  color: var(--felt);
-  font: 700 25px/1 Georgia, serif;
-}
-
-.rules-jump {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 28px 0 8px;
-  padding: 10px;
-  border-radius: 14px;
-  background: #ebe7dc;
-}
-
-.rules-jump a {
-  flex: 1 1 130px;
-  min-height: 42px;
-  display: grid;
-  place-items: center;
-  padding: 8px 12px;
-  border-radius: 9px;
-  background: rgba(255, 253, 247, 0.82);
-  color: #41504a;
-  font-size: 13px;
-  font-weight: 750;
-  text-decoration: none;
-}
-
-.rules-jump a:hover {
-  background: var(--cream);
-}
-
 .rules-page .rules-section {
   padding: 38px 0;
   border-top: 1px solid var(--line);
@@ -526,40 +463,8 @@ legend {
   border-top: 0;
 }
 
-.rules-section-heading {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.rules-section-heading .eyebrow {
-  margin-bottom: 4px;
-}
-
-.rules-section-heading h2,
-.rules-footer h2 {
-  margin: 0;
-  font: 700 clamp(25px, 4vw, 34px) / 1.1 Georgia, serif;
-  letter-spacing: -0.025em;
-}
-
-.rules-step {
-  flex: 0 0 auto;
-  width: 42px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--felt);
-  color: var(--cream);
-  font: 700 19px/1 Georgia, serif;
-}
-
 .rules-section > p,
-.trick-example p,
-.phase-grid p,
-.trump-exchange p {
+.trick-example p {
   margin: 0;
   color: #4f5b56;
   font-size: 15px;
@@ -606,36 +511,14 @@ legend {
   font-size: 17px;
 }
 
-.rule-note {
-  display: grid;
-  gap: 4px;
-  padding: 15px 17px;
-  border-left: 4px solid var(--gold);
-  border-radius: 0 10px 10px 0;
-  background: #fff8df;
-  color: #615526;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.rule-note strong {
-  color: #463b17;
-}
-
-.rule-note.compact {
-  margin-top: 16px;
-}
-
-.trick-examples,
-.phase-grid {
+.trick-examples {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 20px;
 }
 
-.trick-example,
-.phase-grid > article {
+.trick-example {
   min-width: 0;
   padding: 18px;
   border: 1px solid var(--line);
@@ -643,8 +526,7 @@ legend {
   background: #faf8f1;
 }
 
-.example-label,
-.phase-pill {
+.example-label {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
@@ -686,8 +568,7 @@ legend {
 }
 
 .versus,
-.math-symbol,
-.meter-arrow {
+.math-symbol {
   color: #8c9692;
   font-weight: 800;
 }
@@ -698,50 +579,6 @@ legend {
 
 .trick-example p strong {
   color: var(--ink);
-}
-
-.phase-grid > article {
-  background: #f6f4ec;
-}
-
-.phase-grid h3 {
-  margin: 14px 0 6px;
-  font: 700 21px/1.2 Georgia, serif;
-}
-
-.phase-pill.open {
-  background: #e0eee8;
-  color: #205343;
-}
-
-.phase-pill.strict {
-  background: #f4e4bd;
-  color: #71530e;
-}
-
-.draw-order {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-  margin-top: 14px;
-  color: #375047;
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.draw-order b {
-  color: #9f7b26;
-}
-
-.strict-order {
-  display: grid;
-  gap: 8px;
-  margin: 14px 0 0;
-  padding-left: 22px;
-  color: #4f5b56;
-  font-size: 13px;
-  line-height: 1.4;
 }
 
 .marriage-demo {
@@ -775,81 +612,6 @@ legend {
 .marriage-values strong {
   color: #f5cf6c;
   font: 700 clamp(28px, 5vw, 40px) / 1 Georgia, serif;
-}
-
-.rule-checklist {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 24px;
-  margin: 20px 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rule-checklist li {
-  position: relative;
-  padding-left: 24px;
-  color: #4f5b56;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.rule-checklist li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: #34725d;
-  font-weight: 900;
-}
-
-.trump-exchange {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: #faf8f1;
-}
-
-.trump-exchange .rule-card {
-  width: 54px;
-}
-
-.trump-exchange p strong {
-  color: var(--ink);
-}
-
-.sixty-six-meter {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 18px;
-  margin: 18px 0;
-  padding: 22px;
-  border-radius: 17px;
-  background: var(--felt);
-  color: var(--cream);
-}
-
-.sixty-six-meter > div:not(.meter-arrow) {
-  display: grid;
-  gap: 4px;
-}
-
-.sixty-six-meter strong {
-  color: #f5cf6c;
-  font: 700 28px/1 Georgia, serif;
-}
-
-.sixty-six-meter span {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-}
-
-.meter-arrow {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 22px;
 }
 
 .game-point-table {
@@ -892,27 +654,6 @@ legend {
 .game-point-row strong {
   color: var(--felt);
   font: 700 22px/1 Georgia, serif;
-}
-
-.rules-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-top: 6px;
-  padding: 30px 0 0;
-  border-top: 1px solid var(--line);
-  color: var(--ink);
-  text-align: left;
-  text-transform: none;
-}
-
-.rules-footer .eyebrow {
-  margin-bottom: 5px;
-}
-
-.rules-footer .button-link {
-  flex: 0 0 auto;
 }
 
 .game-shell {
@@ -1262,10 +1003,32 @@ legend {
 
 .trump-marker {
   position: absolute;
-  top: calc(50% + 64px);
+  top: calc(50% + 58px);
+  z-index: 3;
+  min-width: 84px;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 5px 10px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 9px;
+  background: #f4d474;
+  box-shadow: 0 4px 12px rgba(5, 24, 18, 0.28);
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 12px;
+  color: #173d32;
+  line-height: 1;
+}
+
+.trump-marker span {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.trump-marker b {
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .empty-stock {
@@ -1516,54 +1279,6 @@ legend {
     border-radius: 18px;
   }
 
-  .rules-page h1 {
-    font-size: clamp(38px, 12vw, 54px);
-  }
-
-  .rules-hero .lede {
-    margin-top: 18px;
-    font-size: 17px;
-  }
-
-  .rules-facts {
-    grid-template-columns: repeat(2, 1fr);
-    margin-top: 20px;
-  }
-
-  .rules-facts span {
-    min-height: 66px;
-  }
-
-  .rules-jump {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    margin-top: 20px;
-    padding: 7px;
-  }
-
-  .rules-jump a {
-    min-height: 44px;
-  }
-
-  .rules-page .rules-section {
-    padding: 30px 0;
-  }
-
-  .rules-section-heading {
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .rules-step {
-    width: 36px;
-    font-size: 17px;
-  }
-
-  .rules-section-heading h2,
-  .rules-footer h2 {
-    font-size: 25px;
-  }
-
   .rank-ladder {
     gap: 4px;
     margin-top: 20px;
@@ -1602,26 +1317,16 @@ legend {
     font-size: 9px;
   }
 
-  .rule-note {
-    padding: 13px 14px;
-  }
-
-  .trick-examples,
-  .phase-grid {
+  .trick-examples {
     grid-template-columns: 1fr;
   }
 
-  .trick-example,
-  .phase-grid > article {
+  .trick-example {
     padding: 15px;
   }
 
   .example-cards {
     min-height: 124px;
-  }
-
-  .rule-checklist {
-    grid-template-columns: 1fr;
   }
 
   .marriage-demo {
@@ -1638,34 +1343,9 @@ legend {
     font-size: 11px;
   }
 
-  .trump-exchange {
-    align-items: flex-start;
-    gap: 13px;
-    padding: 14px;
-  }
-
-  .sixty-six-meter {
-    gap: 10px;
-    padding: 18px 14px;
-  }
-
-  .sixty-six-meter strong {
-    font-size: 24px;
-  }
-
   .game-point-row {
     grid-template-columns: minmax(0, 1fr) 72px;
     padding-inline: 12px;
-  }
-
-  .rules-footer {
-    align-items: stretch;
-    flex-direction: column;
-    padding-top: 24px;
-  }
-
-  .rules-footer .button-link {
-    justify-content: center;
   }
 
   .opponent-zone {
@@ -2054,6 +1734,203 @@ legend {
 
   .table-actions {
     margin-top: 2px;
+  }
+}
+
+.rules-quick {
+  width: min(760px, calc(100% - 24px));
+  padding: 32px clamp(20px, 5vw, 44px);
+}
+
+.rules-quick h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 48px);
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.rules-header p {
+  max-width: 520px;
+  margin: 10px 0 0;
+  color: #4f5b56;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.rules-header .button-link {
+  flex: 0 0 auto;
+  min-width: 84px;
+  justify-content: center;
+}
+
+.rules-quick .rules-section {
+  padding: 26px 0;
+}
+
+.rules-quick .rules-section h2 {
+  margin: 0 0 8px;
+  font: 700 25px/1.15 Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+.rules-quick .rules-section > p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.rules-quick .rank-ladder {
+  margin: 18px 0 0;
+}
+
+.rules-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-left: 20px;
+  color: #4f5b56;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.rules-list strong {
+  color: var(--ink);
+}
+
+.quick-examples {
+  margin-top: 16px;
+}
+
+.quick-examples .trick-example {
+  padding: 13px;
+}
+
+.quick-examples .example-cards {
+  min-height: 102px;
+  padding: 8px 0 5px;
+}
+
+.quick-examples .rule-card {
+  width: 54px;
+}
+
+.quick-examples .trick-example p {
+  line-height: 1.35;
+}
+
+.rules-quick .marriage-demo {
+  min-height: 126px;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.rules-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.rules-mini-grid p {
+  margin: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #faf8f1;
+  color: #4f5b56;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.rules-mini-grid strong {
+  color: var(--ink);
+}
+
+.rules-quick .game-point-table {
+  margin-top: 16px;
+}
+
+.rules-quick .game-point-row {
+  min-height: 44px;
+}
+
+.rules-quick .game-point-row strong {
+  font: 800 13px/1.2 system-ui, sans-serif;
+}
+
+.rules-play {
+  width: fit-content;
+  min-width: 120px;
+  justify-content: center;
+  margin: 24px auto 0;
+}
+
+@media (max-width: 759px) {
+  .rules-quick {
+    width: calc(100% - 16px);
+    margin-top: 8px;
+    padding: 22px 14px 26px;
+  }
+
+  .rules-quick h1 {
+    font-size: 34px;
+  }
+
+  .rules-header {
+    align-items: flex-start;
+    padding-bottom: 16px;
+  }
+
+  .rules-header p {
+    margin-top: 7px;
+    font-size: 14px;
+  }
+
+  .rules-header .button-link {
+    min-width: 70px;
+    min-height: 40px;
+    padding-inline: 14px;
+  }
+
+  .rules-quick .rules-section {
+    padding: 22px 0;
+  }
+
+  .rules-quick .rules-section h2 {
+    font-size: 22px;
+  }
+
+  .quick-examples {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-examples .trick-example {
+    padding: 10px;
+  }
+
+  .quick-examples .example-cards {
+    gap: 5px;
+  }
+
+  .quick-examples .rule-card {
+    width: 45px;
+  }
+
+  .quick-examples .versus {
+    font-size: 11px;
+  }
+
+  .quick-examples .trick-example p {
+    font-size: 11px;
+  }
+
+  .rules-mini-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -23,7 +23,7 @@ use tracing_subscriber::EnvFilter;
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
-const STYLES_VERSION: &str = "20260725-5";
+const STYLES_VERSION: &str = "20260725-6";
 
 #[derive(Clone)]
 struct App {
@@ -268,39 +268,18 @@ async fn home(cx: &Cx) -> Result {
 #[allow(clippy::too_many_lines)]
 async fn rules(cx: &Cx) -> Result {
     view! {
-        <article class="rules-page rules-guide">
-            <header class="rules-hero">
-                <p class="eyebrow">"The 24-card game"</p>
-                <h1>"How to play Sixty-Six"</h1>
-                <p class="lede">
-                    "Take card points in tricks, add marriage bonuses, and declare when you reach 66. The first player to 7 game points wins the match."
-                </p>
-                <div class="rules-facts" aria-label="Game at a glance">
-                    <span><strong>"2"</strong>" players"</span>
-                    <span><strong>"6"</strong>" cards each"</span>
-                    <span><strong>"66"</strong>" wins a deal"</span>
-                    <span><strong>"7"</strong>" wins the match"</span>
+        <article class="rules-page rules-quick">
+            <header class="rules-header">
+                <div>
+                    <h1>"How to play"</h1>
+                    <p>"Win tricks. Reach 66 card points. First to 7 game points wins."</p>
                 </div>
+                <a class="primary button-link" href="/">"Play"</a>
             </header>
 
-            <nav class="rules-jump" aria-label="Rules sections">
-                <a href="#card-order">"Card order"</a>
-                <a href="#playing">"Playing tricks"</a>
-                <a href="#marriages">"Marriages"</a>
-                <a href="#winning">"Winning"</a>
-            </nav>
-
             <section id="card-order" class="rules-section">
-                <div class="rules-section-heading">
-                    <span class="rules-step">"1"</span>
-                    <div>
-                        <p class="eyebrow">"Learn this first"</p>
-                        <h2>"The Ten is unusually powerful"</h2>
-                    </div>
-                </div>
-                <p>
-                    "Cards rank from strongest to weakest as shown below. Unlike most familiar card games, the Ten beats the King, Queen, and Jack."
-                </p>
+                <h2>"Card order"</h2>
+                <p>"Highest to lowest. The number is its card-point value."</p>
                 <div class="rank-ladder" aria-label="Cards from strongest to weakest with their point values">
                     (rule_rank(cx, Rank::Ace).await?)
                     (rule_rank(cx, Rank::Ten).await?)
@@ -309,26 +288,18 @@ async fn rules(cx: &Cx) -> Result {
                     (rule_rank(cx, Rank::Jack).await?)
                     (rule_rank(cx, Rank::Nine).await?)
                 </div>
-                <div class="rule-note">
-                    <strong>"Remember: A–10–K–Q–J–9."</strong>
-                    <span>"There are 120 card points in the deck. Rank decides a trick; the number below each card is what the winner scores."</span>
-                </div>
             </section>
 
             <section id="playing" class="rules-section">
-                <div class="rules-section-heading">
-                    <span class="rules-step">"2"</span>
-                    <div>
-                        <p class="eyebrow">"Playing tricks"</p>
-                        <h2>"Led suit first, unless trump appears"</h2>
-                    </div>
-                </div>
-                <p>
-                    "One player leads a card and the other responds. The strongest card of the led suit wins—unless a trump is played, in which case the strongest trump wins."
-                </p>
-                <div class="trick-examples">
+                <h2>"Take tricks"</h2>
+                <ul class="rules-list">
+                    <li><strong>"Stock open:"</strong>" play any card. The winner draws first and leads next."</li>
+                    <li><strong>"Closed or empty:"</strong>" follow suit and beat the lead if possible; otherwise trump; otherwise any card."</li>
+                    <li><strong>"Winner:"</strong>" highest trump, or highest card of the led suit if no trump was played."</li>
+                </ul>
+                <div class="trick-examples quick-examples">
                     <article class="trick-example">
-                        <span class="example-label">"Hearts are trump"</span>
+                        <span class="example-label">"♥ is trump"</span>
                         <div class="example-cards">
                             <div>
                                 (rule_card(cx, Card::new(Suit::Clubs, Rank::Queen), "led").await?)
@@ -340,10 +311,10 @@ async fn rules(cx: &Cx) -> Result {
                                 <small>"off-suit"</small>
                             </div>
                         </div>
-                        <p><strong>"Queen of clubs wins."</strong>" The Ace is stronger, but it is neither the led suit nor trump."</p>
+                        <p><strong>"Q♣ wins."</strong>" Off-suit cards cannot win."</p>
                     </article>
                     <article class="trick-example">
-                        <span class="example-label">"Hearts are trump"</span>
+                        <span class="example-label">"♥ is trump"</span>
                         <div class="example-cards">
                             <div>
                                 (rule_card(cx, Card::new(Suit::Clubs, Rank::Ace), "led").await?)
@@ -355,43 +326,13 @@ async fn rules(cx: &Cx) -> Result {
                                 <small>"trump"</small>
                             </div>
                         </div>
-                        <p><strong>"Nine of hearts wins."</strong>" Even the lowest trump beats the highest card of another suit."</p>
+                        <p><strong>"9♥ wins."</strong>" Any trump beats a non-trump."</p>
                     </article>
-                </div>
-
-                <div class="phase-grid">
-                    <article>
-                        <span class="phase-pill open">"Stock open"</span>
-                        <h3>"Play any card"</h3>
-                        <p>"You do not have to follow suit or play trump."</p>
-                        <div class="draw-order" aria-label="Drawing order">
-                            <span>"Trick winner"</span><b>"→"</b><span>"draws first"</span><b>"→"</b><span>"leads next"</span>
-                        </div>
-                    </article>
-                    <article>
-                        <span class="phase-pill strict">"Closed or empty"</span>
-                        <h3>"Strict play begins"</h3>
-                        <ol class="strict-order">
-                            <li>"Follow suit and beat the lead if you can."</li>
-                            <li>"No led suit? Play trump if you can."</li>
-                            <li>"No led suit or trump? Play anything."</li>
-                        </ol>
-                    </article>
-                </div>
-                <div class="rule-note compact">
-                    <strong>"Closing the stock is a promise."</strong>
-                    <span>"You stop drawing and commit to reach 66 under strict play. Fail, and your opponent wins at least 2 game points."</span>
                 </div>
             </section>
 
             <section id="marriages" class="rules-section">
-                <div class="rules-section-heading">
-                    <span class="rules-step">"3"</span>
-                    <div>
-                        <p class="eyebrow">"Bonus points"</p>
-                        <h2>"King + Queen makes a marriage"</h2>
-                    </div>
-                </div>
+                <h2>"Marriage"</h2>
                 <div class="marriage-demo">
                     (rule_card(cx, Card::new(Suit::Hearts, Rank::King), "").await?)
                     <span class="math-symbol">"+"</span>
@@ -402,73 +343,44 @@ async fn rules(cx: &Cx) -> Result {
                         <span>"+40 if hearts are trump"</span>
                     </div>
                 </div>
-                <div class="rule-note compact">
-                    <strong>"A marriage is your lead, not a separate step."</strong>
-                    <span>"Announcing it plays that King or Queen into the trick. Your opponent answers normally, and whoever wins leads next."</span>
-                </div>
-                <ul class="rule-checklist">
-                    <li>"You must be leading the trick."</li>
-                    <li>"Lead either the King or Queen while holding the other."</li>
-                    <li>"Until you win a trick, the +20 or +40 stays pending."</li>
-                    <li>"Marriages are unavailable once the stock is closed or empty."</li>
+                <ul class="rules-list">
+                    <li>"On lead, play a King or Queen while holding the other. That card starts the trick."</li>
+                    <li>"The bonus stays pending until you win a trick."</li>
+                    <li>"Only available while the stock is open."</li>
                 </ul>
-                <div class="trump-exchange">
-                    <div>
-                        (rule_card(cx, Card::new(Suit::Spades, Rank::Nine), "").await?)
-                    </div>
-                    <p><strong>"Trump Nine exchange."</strong>" After winning a trick, the player on lead may swap the trump Nine for the face-up trump card while the stock is open."</p>
+                <div class="rules-mini-grid">
+                    <p><strong>"Trump Nine."</strong>" After winning a trick, exchange it for the face-up trump while on lead."</p>
+                    <p><strong>"Close stock."</strong>" Stop drawing and use strict play. Fail to reach 66 and your opponent wins at least 2 game points."</p>
                 </div>
             </section>
 
             <section id="winning" class="rules-section">
-                <div class="rules-section-heading">
-                    <span class="rules-step">"4"</span>
-                    <div>
-                        <p class="eyebrow">"Ending a deal"</p>
-                        <h2>"Declare 66 when you have enough"</h2>
-                    </div>
-                </div>
-                <div class="sixty-six-meter" aria-label="Example card point total">
-                    <div class="meter-total">
-                        <strong>"66+"</strong>
-                        <span>"tricks + marriages"</span>
-                    </div>
-                    <div class="meter-arrow">"→"</div>
-                    <div>
-                        <strong>"Declare"</strong>
-                        <span>"before playing another card"</span>
-                    </div>
-                </div>
-                <p>
-                    "Declaration is explicit in this version. If you declare below 66, your opponent wins the deal. If nobody declares and the stock was not closed, the final trick is worth 10 extra card points."
-                </p>
+                <h2>"End the deal"</h2>
+                <ul class="rules-list">
+                    <li>"On lead, declare when tricks plus marriages reach 66. Declaring early loses."</li>
+                    <li>"If nobody declares and the stock stayed open, the last trick gets 10 extra card points."</li>
+                </ul>
                 <div class="game-point-table" role="table" aria-label="Game points awarded for winning a deal">
                     <div class="game-point-row heading" role="row">
-                        <span role="columnheader">"Opponent’s result"</span>
-                        <span role="columnheader">"Game points"</span>
+                        <span role="columnheader">"Opponent"</span>
+                        <span role="columnheader">"You score"</span>
                     </div>
                     <div class="game-point-row" role="row">
-                        <span role="cell">"33 or more card points"</span>
-                        <strong role="cell">"1"</strong>
+                        <span role="cell">"33+ card points"</span>
+                        <strong role="cell">"1 point"</strong>
                     </div>
                     <div class="game-point-row" role="row">
-                        <span role="cell">"0–32 points, but won a trick"</span>
-                        <strong role="cell">"2"</strong>
+                        <span role="cell">"0–32, won a trick"</span>
+                        <strong role="cell">"2 points"</strong>
                     </div>
                     <div class="game-point-row" role="row">
                         <span role="cell">"Won no tricks"</span>
-                        <strong role="cell">"3"</strong>
+                        <strong role="cell">"3 points"</strong>
                     </div>
                 </div>
             </section>
 
-            <footer class="rules-footer">
-                <div>
-                    <p class="eyebrow">"Ready?"</p>
-                    <h2>"The rest makes sense after one deal."</h2>
-                </div>
-                <a class="primary button-link" href="/">"Start a match"</a>
-            </footer>
+            <a class="primary button-link rules-play" href="/">"Play"</a>
         </article>
     }
 }
@@ -953,14 +865,18 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                     <div class="empty-stock">"empty"</div>
                                 } else if deal.closed_by.is_some() {
                                     (card_back(__cx, "stock closed").await?)
-                                    <span class="trump-marker">((deal.trump.symbol(), " trump"))</span>
+                                    <strong class="trump-marker">
+                                        <span>"Trump"</span>
+                                        <b>((deal.trump.symbol(), " ", deal.trump.name()))</b>
+                                    </strong>
                                 } else {
                                     (card_back(__cx, "stock").await?)
                                     if let Some(trump_card) = deal.trump_card {
                                         (table_card(__cx, trump_card, "trump-card").await?)
-                                        <span class="trump-marker">
-                                            ((deal.trump.symbol(), " trump"))
-                                        </span>
+                                        <strong class="trump-marker">
+                                            <span>"Trump"</span>
+                                            <b>((deal.trump.symbol(), " ", deal.trump.name()))</b>
+                                        </strong>
                                     }
                                 }
                             </div>
