@@ -1398,9 +1398,9 @@ legend {
   }
 
   .card-option {
-    width: auto;
+    width: min(94px, calc((100% - 10px) / 6));
     min-width: 0;
-    flex: 1 1 0;
+    flex: 0 0 min(94px, calc((100% - 10px) / 6));
     margin-left: 0;
   }
 

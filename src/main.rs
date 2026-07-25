@@ -23,7 +23,7 @@ use tracing_subscriber::EnvFilter;
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
-const STYLES_VERSION: &str = "20260725-6";
+const STYLES_VERSION: &str = "20260725-7";
 
 #[derive(Clone)]
 struct App {
