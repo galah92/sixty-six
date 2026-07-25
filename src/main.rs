@@ -756,7 +756,7 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                     hx-post=(bot_url)
                     hx-trigger="load delay:650ms"
                     hx-target="#game-board"
-                    hx-swap="outerHTML"
+                    hx-swap="outerHTML transition:true"
                 >
                     <input type="hidden" name="revision" value=(room.revision)>
                 </form>
@@ -957,7 +957,7 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                 action=(action_url.as_str())
                                 hx-post=(action_url.as_str())
                                 hx-target="#game-board"
-                                hx-swap="outerHTML"
+                                hx-swap="outerHTML transition:true"
                                 class="play-form"
                             >
                                 <input type="hidden" name="revision" value=(room.revision)>
@@ -1066,6 +1066,10 @@ async fn selectable_card(
     };
     let choice_id = format!("select-{}", card.ascii_code());
     let card_id = format!("card-{}", card.ascii_code());
+    let transition_style = format!(
+        "view-transition-name: card-{}",
+        card.ascii_code().to_ascii_lowercase()
+    );
     let choice_label = if marriage && legal {
         format!(
             "Select {}; {} point marriage available",
@@ -1091,6 +1095,7 @@ async fn selectable_card(
                 id=(card_id)
                 class=(card_class)
                 for=(choice_id.as_str())
+                style=(transition_style)
             >
                 <span class="corner">
                     <strong>(card.rank.symbol())</strong><span>(card.suit.symbol())</span>
@@ -1123,7 +1128,7 @@ async fn simple_action_form(
             action=(action_url)
             hx-post=(action_url)
             hx-target="#game-board"
-            hx-swap="outerHTML"
+            hx-swap="outerHTML transition:true"
         >
             <input type="hidden" name="revision" value=(revision)>
             <input type="hidden" name="action" value=(action)>
@@ -1134,10 +1139,15 @@ async fn simple_action_form(
 
 async fn table_card(__cx: &Cx, card: Card, extra_class: &str) -> Result {
     let color = if card.suit.is_red() { "red" } else { "black" };
+    let transition_style = format!(
+        "view-transition-name: card-{}",
+        card.ascii_code().to_ascii_lowercase()
+    );
     view! {
         <div
             id=(format!("card-{}", card.ascii_code()))
             class=(format!("card-face table-card {color} {extra_class}"))
+            style=(transition_style)
             aria-label=(card.accessible_name())
         >
             <span class="corner">

@@ -690,12 +690,12 @@ legend {
 }
 
 .game-topbar {
-  min-height: 48px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 5px 4px 10px;
+  padding: 1px 4px 5px;
   color: var(--muted);
   font-size: 13px;
   letter-spacing: 0.05em;
@@ -788,7 +788,7 @@ legend {
   align-self: start;
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 2fr) auto minmax(0, 1fr);
   border-radius: 24px;
   background:
     radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.055), transparent 38%),
@@ -816,7 +816,7 @@ legend {
 }
 
 .opponent-zone {
-  padding: 10px 16px 4px;
+  padding: 18px 16px 8px;
 }
 
 .player-meta {
@@ -1345,7 +1345,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 8px 14px 2px;
+    padding: 14px 14px 4px;
   }
 
   .opponent-hand {
@@ -1594,7 +1594,8 @@ legend {
   }
 
   .game-topbar {
-    min-height: 54px;
+    min-height: 46px;
+    padding-block: 2px 6px;
     font-size: 16px;
   }
 
@@ -1604,7 +1605,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 12px 28px 6px;
+    padding: 24px 28px 12px;
   }
 
   .opponent-hand {
@@ -1669,8 +1670,8 @@ legend {
   }
 
   .game-topbar {
-    min-height: 48px;
-    padding: 3px 4px 7px;
+    min-height: 42px;
+    padding: 1px 4px 5px;
   }
 
   .table {
@@ -1678,7 +1679,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 8px 28px 2px;
+    padding: 12px 28px 4px;
   }
 
   .opponent-hand {
@@ -1926,6 +1927,21 @@ legend {
   }
 }
 
+::view-transition-group(*) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-group(root) {
+  animation-duration: 0.01ms;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1934,5 +1950,9 @@ legend {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
   }
 }
