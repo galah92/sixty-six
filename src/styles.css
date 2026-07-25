@@ -1,4 +1,5 @@
 :root {
+  --site-header-height: 68px;
   color-scheme: light;
   --ink: #17201d;
   --muted: #65716c;
@@ -60,7 +61,7 @@ a {
 }
 
 .site-header {
-  height: 68px;
+  height: var(--site-header-height);
   padding: 0 20px;
   display: flex;
   align-items: center;
@@ -108,6 +109,21 @@ footer {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+body:has(.game-shell) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:has(.game-shell) main {
+  height: calc(100dvh - var(--site-header-height));
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:has(.game-shell) footer {
+  display: none;
 }
 
 .home-shell {
@@ -464,9 +480,12 @@ legend {
 
 .game-shell {
   width: min(100%, 980px);
-  min-height: calc(100vh - 68px);
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   margin: 0 auto;
-  padding: 0 12px 30px;
+  padding: 0 12px 10px;
 }
 
 .bot-trigger {
@@ -581,10 +600,14 @@ legend {
 
 .table {
   position: relative;
-  min-height: calc(100vh - 128px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 900px;
+  align-self: start;
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   border-radius: 24px;
   background:
     radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.055), transparent 38%),
@@ -889,7 +912,7 @@ legend {
 .card-choice:checked + .hand-card {
   z-index: 4;
   border-color: #f4d474;
-  transform: translateY(-14px);
+  transform: translateY(-10px);
   box-shadow:
     0 0 0 3px #f4d474,
     0 16px 30px rgba(0, 0, 0, 0.32);
@@ -925,29 +948,21 @@ legend {
 .selection-panel {
   display: grid;
   justify-items: center;
-  gap: 7px;
-  min-height: 80px;
-  margin-top: 7px;
+  align-content: center;
+  gap: 6px;
+  min-height: 52px;
+  margin-top: 2px;
   text-align: center;
 }
 
 .selection-panel p {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .selection-prompt {
   color: rgba(255, 255, 255, 0.74);
-}
-
-.selected-prompt {
-  display: none;
-  color: white;
-  font-weight: 750;
-}
-
-.marriage-tip {
-  color: #f4d474;
 }
 
 .selection-actions {
@@ -960,13 +975,13 @@ legend {
 .play-selected,
 .marriage-choice {
   display: none;
-  min-height: 48px;
+  min-height: 46px;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
   border-radius: 10px;
-  padding: 0 16px;
-  font-size: 14px;
+  padding: 0 18px;
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -988,13 +1003,8 @@ legend {
   display: none;
 }
 
-.play-form:has(.card-choice:checked) .selected-prompt,
 .play-form:has(.card-choice:checked) .play-selected {
   display: flex;
-}
-
-.play-form:has(.card-choice[class*="marriage-"]:checked) .marriage-tip {
-  display: none;
 }
 
 .play-form:has(.card-choice.marriage-clubs:checked) .marriage-choice.clubs,
@@ -1005,12 +1015,12 @@ legend {
 }
 
 .table-actions {
-  min-height: 35px;
+  min-height: 44px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 7px;
-  margin-top: 8px;
+  margin-top: 3px;
 }
 
 .table-action,
@@ -1085,8 +1095,12 @@ legend {
 }
 
 @media (min-width: 760px) {
+  :root {
+    --site-header-height: 64px;
+  }
+
   .site-header {
-    height: 78px;
+    height: var(--site-header-height);
   }
 
   .home-shell {
@@ -1108,22 +1122,21 @@ legend {
   }
 
   .game-shell {
-    min-height: calc(100vh - 78px);
-    padding: 0 18px 32px;
+    padding: 0 18px 10px;
   }
 
   .table {
-    min-height: clamp(640px, calc(100dvh - 130px), 900px);
+    min-height: 0;
   }
 
   .game-topbar {
-    min-height: 58px;
-    font-size: 14px;
+    min-height: 54px;
+    font-size: 16px;
   }
 
   .score-mode,
   .area-label {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .opponent-zone {
@@ -1135,7 +1148,7 @@ legend {
   }
 
   .card-back {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .card-back.mini {
@@ -1159,30 +1172,100 @@ legend {
 
   .presence,
   .card-points {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .turn-status {
     min-height: 38px;
     padding: 8px 14px;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .trump-marker {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .marriage-flag {
     padding: 5px 8px;
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .selection-panel p {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .hand {
     min-height: 154px;
+  }
+}
+
+@media (min-width: 760px) and (max-height: 850px) {
+  :root {
+    --site-header-height: 56px;
+  }
+
+  .game-shell {
+    padding-bottom: 8px;
+  }
+
+  .game-topbar {
+    min-height: 48px;
+    padding: 3px 4px 7px;
+  }
+
+  .table {
+    border-radius: 20px;
+  }
+
+  .opponent-zone {
+    padding: 12px 28px 4px;
+  }
+
+  .opponent-hand {
+    height: 64px;
+    margin-top: 4px;
+  }
+
+  .card-back.mini {
+    width: 46px;
+    margin-left: -15px;
+  }
+
+  .table-center {
+    min-height: 160px;
+    padding-block: 2px;
+  }
+
+  .you-zone {
+    padding: 4px 24px 8px;
+  }
+
+  .turn-status {
+    min-height: 34px;
+    margin-bottom: 3px;
+    padding: 6px 13px;
+  }
+
+  .you-meta {
+    padding-bottom: 2px;
+  }
+
+  .hand {
+    min-height: 126px;
+    padding-top: 0;
+  }
+
+  .card-option {
+    width: 86px;
+  }
+
+  .selection-panel {
+    min-height: 48px;
+    margin-top: 0;
+  }
+
+  .table-actions {
+    margin-top: 2px;
   }
 }
 

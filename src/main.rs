@@ -22,6 +22,7 @@ use topcoat::{
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
+const STYLES_VERSION: &str = "20260725-2";
 
 #[derive(Clone)]
 struct App {
@@ -119,7 +120,10 @@ async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result {
                     content="Play the classic two-player card game Sixty-Six against a clever computer or a friend."
                 >
                 <title>"Sixty-Six · Play online"</title>
-                <link rel="stylesheet" href="/styles.css">
+                <link
+                    rel="stylesheet"
+                    href=(format!("/styles.css?v={STYLES_VERSION}"))
+                >
                 <script
                     defer="true"
                     src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
@@ -266,7 +270,7 @@ async fn styles() -> Result<([(&'static str, &'static str); 2], &'static str)> {
     Ok((
         [
             ("content-type", "text/css; charset=utf-8"),
-            ("cache-control", "public, max-age=3600"),
+            ("cache-control", "no-cache"),
         ],
         include_str!("styles.css"),
     ))
@@ -570,6 +574,11 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
         Vec::new()
     };
     let has_marriage = !marriage_options.is_empty();
+    let selection_hint = if has_marriage {
+        "Choose a card · +20/+40 marks a marriage"
+    } else {
+        "Choose a card"
+    };
 
     view! {
         <section
@@ -780,14 +789,8 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                     }
                                 </div>
                                 if viewer_turn {
-                                    <div class="selection-panel">
-                                        <p class="selection-prompt">"Tap a card to select it"</p>
-                                        <p class="selected-prompt">"Card selected · choose an action"</p>
-                                        if has_marriage {
-                                            <p class="marriage-tip">
-                                                "Marriage available · select a marked king or queen"
-                                            </p>
-                                        }
+                                    <div class="selection-panel" aria-live="polite">
+                                        <p class="selection-prompt">(selection_hint)</p>
                                         <div class="selection-actions">
                                             <button
                                                 type="submit"
@@ -795,7 +798,7 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                                 value="play"
                                                 class="play-selected"
                                             >
-                                                "Play selected card"
+                                                "Play card"
                                             </button>
                                             for (suit, value, can_declare_with_marriage) in marriage_options {
                                                 <button
@@ -901,7 +904,9 @@ async fn selectable_card(
                     <strong>(card.rank.symbol())</strong><span>(card.suit.symbol())</span>
                 </span>
                 if marriage && legal {
-                    <span class="marriage-flag">"marriage"</span>
+                    <span class="marriage-flag" aria-hidden="true">
+                        (("+", marriage_value))
+                    </span>
                 }
             </label>
         </div>
