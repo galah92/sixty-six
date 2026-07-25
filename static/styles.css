@@ -814,7 +814,7 @@ legend {
 }
 
 .opponent-zone {
-  padding: 18px 16px 8px;
+  padding: 10px 16px 4px;
 }
 
 .player-meta {
@@ -1004,32 +1004,25 @@ legend {
 
 .trump-marker {
   position: absolute;
-  top: calc(50% + 58px);
+  right: 0;
+  bottom: 0;
   z-index: 3;
-  min-width: 84px;
+  width: 42px;
+  height: 42px;
   display: grid;
-  justify-items: center;
-  gap: 1px;
-  padding: 5px 10px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 9px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
   background: #f4d474;
   box-shadow: 0 4px 12px rgba(5, 24, 18, 0.28);
-  white-space: nowrap;
   color: #173d32;
+  font-weight: 900;
+  font-size: 29px;
   line-height: 1;
 }
 
-.trump-marker span {
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.trump-marker b {
-  font-size: 13px;
-  font-weight: 900;
+.trump-marker.red {
+  color: var(--red);
 }
 
 .empty-stock {
@@ -1350,7 +1343,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 14px 14px 4px;
+    padding: 8px 14px 2px;
   }
 
   .opponent-hand {
@@ -1609,7 +1602,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 24px 28px 12px;
+    padding: 12px 28px 6px;
   }
 
   .opponent-hand {
@@ -1650,10 +1643,6 @@ legend {
     font-size: 15px;
   }
 
-  .trump-marker {
-    font-size: 14px;
-  }
-
   .marriage-flag {
     padding: 5px 8px;
     font-size: 13px;
@@ -1687,7 +1676,7 @@ legend {
   }
 
   .opponent-zone {
-    padding: 12px 28px 4px;
+    padding: 8px 28px 2px;
   }
 
   .opponent-hand {
@@ -1935,21 +1924,6 @@ legend {
   }
 }
 
-::view-transition-group(*) {
-  animation-duration: 180ms;
-  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-::view-transition-group(root) {
-  animation-duration: 0.01ms;
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1958,9 +1932,5 @@ legend {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  ::view-transition-group(*) {
-    animation-duration: 0.01ms !important;
   }
 }
