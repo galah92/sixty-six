@@ -1,3 +1,4 @@
+/* Kept outside src so CSS-only releases do not rebuild the Rust binary. */
 :root {
   --site-header-height: 68px;
   color-scheme: light;

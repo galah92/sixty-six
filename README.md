@@ -29,14 +29,21 @@ Open <http://localhost:3000>.
 ## Validate
 
 ```bash
-cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+./scripts/check
 ```
+
+The script runs formatting, Clippy, and the complete test suite. When a writable
+`/dev/shm` with at least 1 GiB free is available, it keeps Cargo artifacts there
+so a nearly full local disk does not force cold rebuilds.
 
 The test suite includes hundreds of complete seeded matches, card-conservation
 invariants, strict-play rules, scoring transitions, bot information boundaries,
 and atomic SQLite revision checks.
+
+The stylesheet is loaded from `static/styles.css` at startup rather than
+compiled into the binary. CSS-only Docker builds therefore reuse the Rust
+binary, while the commit SHA in the stylesheet URL still refreshes browser
+caches.
 
 ## Production model
 
@@ -73,8 +80,18 @@ fly ssh console --app sixty-six-card-game \
 
 ## Deploy
 
-Authenticate `flyctl`, ensure the globally unique app name in `fly.toml` is
-available, then run:
+For an existing installation, commit the intended change and run:
+
+```bash
+./scripts/release
+```
+
+This validates the code, pushes `main`, deploys with the commit SHA, and verifies
+both `/version` and `/health`. The Docker build keeps Cargo registry and release
+artifacts in remote cache mounts, so later builds compile only what changed.
+
+For a first-time installation, authenticate `flyctl`, ensure the globally
+unique app name in `fly.toml` is available, then run:
 
 ```bash
 fly apps create sixty-six-card-game
@@ -83,4 +100,5 @@ fly deploy --remote-only
 fly scale count 1
 ```
 
-The service health endpoint is `/health`.
+The service health endpoint is `/health`; `/version` reports the deployed Git
+commit.

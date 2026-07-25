@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+if [[ -z "${CARGO_TARGET_DIR:-}" && -d /dev/shm && -w /dev/shm ]]; then
+  available_kb="$(df -Pk /dev/shm | awk 'NR == 2 { print $4 }')"
+  if (( available_kb >= 1048576 )); then
+    sixty_six_target_dir="/dev/shm/sixty-six-target-$(id -u)"
+    mkdir -p "$sixty_six_target_dir"
+    export CARGO_TARGET_DIR="$sixty_six_target_dir"
+  fi
+fi
+
+echo "Checking formatting"
+cargo fmt --all -- --check
+
+echo "Running Clippy"
+CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 cargo clippy --all-targets -- -D warnings
+
+echo "Running tests"
+CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 cargo test --locked
+

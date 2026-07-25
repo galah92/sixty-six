@@ -1,5 +1,6 @@
 use std::env;
 use std::fmt::Write as _;
+use std::fs;
 use std::time::Duration;
 
 use rand::Rng;
@@ -23,13 +24,14 @@ use tracing_subscriber::EnvFilter;
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
-const STYLES_VERSION: &str = "20260725-7";
 
 #[derive(Clone)]
 struct App {
     store: Store,
     public_base_url: String,
     secure_cookies: bool,
+    styles: String,
+    version: String,
 }
 
 #[derive(Deserialize)]
@@ -73,6 +75,10 @@ async fn main() {
         .unwrap_or_else(|_| "http://localhost:3000".to_owned())
         .trim_end_matches('/')
         .to_owned();
+    let styles_path = env::var("STYLES_PATH").unwrap_or_else(|_| "static/styles.css".to_owned());
+    let stylesheet_content = fs::read_to_string(&styles_path)
+        .unwrap_or_else(|error| panic!("read stylesheet at {styles_path}: {error}"));
+    let app_version = env::var("APP_VERSION").unwrap_or_else(|_| "development".to_owned());
     let secure_cookies = env::var("APP_ENV").is_ok_and(|value| value == "production");
     let store = Store::connect(&database_url)
         .await
@@ -110,10 +116,13 @@ async fn main() {
         store,
         public_base_url,
         secure_cookies,
+        styles: stylesheet_content,
+        version: app_version.clone(),
     };
     tracing::info!(
         event = "server_start",
         secure_cookies,
+        version = app_version,
         "starting Sixty-Six server"
     );
     let router = Router::builder()
@@ -151,6 +160,7 @@ async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result {
     if hx_request(cx) {
         return slot.await;
     }
+    let styles_version = app(cx).version.clone();
     view! {
         <!DOCTYPE html>
         <html lang="en">
@@ -165,7 +175,7 @@ async fn root_layout(cx: &Cx, slot: Slot<'_>) -> Result {
                 <title>"Sixty-Six · Play online"</title>
                 <link
                     rel="stylesheet"
-                    href=(format!("/styles.css?v={STYLES_VERSION}"))
+                    href=(format!("/styles.css?v={styles_version}"))
                 >
                 <script
                     defer="true"
@@ -386,19 +396,24 @@ async fn rules(cx: &Cx) -> Result {
 }
 
 #[route(GET "/styles.css")]
-async fn styles() -> Result<([(&'static str, &'static str); 2], &'static str)> {
+async fn styles(cx: &Cx) -> Result<([(&'static str, &'static str); 2], String)> {
     Ok((
         [
             ("content-type", "text/css; charset=utf-8"),
             ("cache-control", "no-cache"),
         ],
-        include_str!("styles.css"),
+        app(cx).styles.clone(),
     ))
 }
 
 #[route(GET "/health")]
 async fn health() -> Result<&'static str> {
     Ok("ok")
+}
+
+#[route(GET "/version")]
+async fn version(cx: &Cx) -> Result<String> {
+    Ok(app(cx).version.clone())
 }
 
 #[route(GET "/join")]

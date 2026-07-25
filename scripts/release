@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Release requires a clean working tree. Commit the intended changes first." >&2
+  exit 1
+fi
+
+branch="$(git branch --show-current)"
+if [[ "$branch" != "main" ]]; then
+  echo "Release must run from main, not $branch." >&2
+  exit 1
+fi
+
+"$repo_root/scripts/check"
+
+head_sha="$(git rev-parse HEAD)"
+git push origin main
+
+remote_sha="$(git ls-remote origin refs/heads/main | awk '{ print $1 }')"
+if [[ "$remote_sha" != "$head_sha" ]]; then
+  echo "origin/main does not match $head_sha after push." >&2
+  exit 1
+fi
+
+flyctl deploy --remote-only --ha=false --yes --build-arg "BUILD_SHA=$head_sha"
+
+public_url="${PUBLIC_BASE_URL:-https://sixty-six-card-game.fly.dev}"
+live_sha=""
+for _ in {1..10}; do
+  live_sha="$(curl --fail --silent --show-error "$public_url/version" || true)"
+  if [[ "$live_sha" == "$head_sha" ]]; then
+    break
+  fi
+  sleep 2
+done
+
+if [[ "$live_sha" != "$head_sha" ]]; then
+  echo "Expected $head_sha at $public_url, found ${live_sha:-no version}." >&2
+  exit 1
+fi
+
+health="$(curl --fail --silent --show-error "$public_url/health")"
+if [[ "$health" != "ok" ]]; then
+  echo "Unexpected health response: $health" >&2
+  exit 1
+fi
+
+echo "Released $head_sha to $public_url"
+
