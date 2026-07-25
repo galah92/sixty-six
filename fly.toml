@@ -10,6 +10,7 @@ primary_region = "fra"
   HOST = "0.0.0.0"
   PORT = "3000"
   PUBLIC_BASE_URL = "https://sixty-six-card-game.fly.dev"
+  RUST_LOG = "sixty_six=info,topcoat=info"
 
 [deploy]
   strategy = "rolling"
@@ -47,4 +48,3 @@ primary_region = "fra"
   memory = "256mb"
   cpus = 1
   cpu_kind = "shared"
-

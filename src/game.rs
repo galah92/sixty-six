@@ -902,6 +902,47 @@ mod tests {
     }
 
     #[test]
+    fn losing_the_marriage_trick_keeps_the_bonus_pending_and_passes_the_lead() {
+        let mut state = MatchState::new(21, ScoreVisibility::Visible);
+        state.deal.trump = Suit::Diamonds;
+        state.deal.leader = Seat::One;
+        state.deal.hands[0] = vec![card("KD"), card("QD")];
+        state.deal.hands[1] = vec![card("AD")];
+        state.deal.talon = VecDeque::from([card("9C"), card("JC")]);
+        state.deal.trump_card = Some(card("9D"));
+
+        state
+            .apply(
+                Seat::One,
+                Action::Play {
+                    card: card("KD"),
+                    announce_marriage: true,
+                    declare: false,
+                },
+            )
+            .unwrap();
+        state
+            .apply(
+                Seat::Two,
+                Action::Play {
+                    card: card("AD"),
+                    announce_marriage: false,
+                    declare: false,
+                },
+            )
+            .unwrap();
+
+        assert_eq!(state.deal.card_points, [0, 15]);
+        assert_eq!(state.deal.pending_marriages, [40, 0]);
+        assert_eq!(state.deal.leader, Seat::Two);
+        assert_eq!(state.deal.active_player(), Seat::Two);
+        assert_eq!(
+            state.deal.last_trick.as_ref().map(|trick| trick.winner),
+            Some(Seat::Two)
+        );
+    }
+
+    #[test]
     fn an_incorrect_declaration_awards_the_opponent() {
         let mut state = MatchState::new(3, ScoreVisibility::Traditional);
         state.deal.tricks_won[1] = 1;

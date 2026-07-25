@@ -44,10 +44,32 @@ The Fly.io configuration intentionally runs one Machine with one attached
 volume. This keeps SQLite simple and gives the application a single writer.
 Fly snapshots are retained for 14 days. There is brief downtime during a
 deployment and an acknowledged risk of losing an active match after a volume
-host failure; v1 stores no accounts, purchases, rankings, or permanent history.
+host failure; v1 stores no accounts, purchases, or rankings.
 
 Rooms waiting for a friend expire after 24 hours. Active and completed rooms
-expire after seven days.
+expire after seven days. The append-only diagnostic event ledger is retained
+for 90 days and stores the action plus authoritative state immediately before
+and after it. Legacy actions created before the event ledger retain their
+actor, revision, action, and timestamp, but do not have state snapshots.
+
+## Game diagnostics
+
+Every accepted or rejected action emits a structured log with the room ID,
+revision, actor, action type, points, pending marriages, trick counts, current
+leader, and completion state. Search live Fly logs by room code:
+
+```bash
+fly logs --app sixty-six-card-game | rg ROOM_CODE
+```
+
+For an exact retained timeline, run the internal inspection command. It prints
+JSON and is not exposed over HTTP:
+
+```bash
+DATABASE_URL=sqlite://local.db cargo run -- inspect ROOM_CODE
+fly ssh console --app sixty-six-card-game \
+  --command "/usr/local/bin/sixty-six inspect ROOM_CODE"
+```
 
 ## Deploy
 
@@ -62,4 +84,3 @@ fly scale count 1
 ```
 
 The service health endpoint is `/health`.
-

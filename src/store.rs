@@ -11,6 +11,7 @@ use crate::game::{Action, MatchState, Seat};
 
 const ACTIVE_ROOM_TTL_SECONDS: i64 = 7 * 24 * 60 * 60;
 const WAITING_ROOM_TTL_SECONDS: i64 = 24 * 60 * 60;
+const GAME_EVENT_TTL_SECONDS: i64 = 90 * 24 * 60 * 60;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -51,6 +52,18 @@ pub struct Room {
     pub player_token_hashes: [Option<String>; 2],
     pub last_seen_at: [Option<i64>; 2],
     pub updated_at: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GameEvent {
+    pub revision: i64,
+    pub deal_number: u32,
+    pub actor: String,
+    pub event_type: String,
+    pub action: Option<Action>,
+    pub state_before: Option<MatchState>,
+    pub state_after: Option<MatchState>,
+    pub created_at: i64,
 }
 
 impl Room {
@@ -116,6 +129,11 @@ impl Store {
         ))
         .execute(&pool)
         .await?;
+        sqlx::raw_sql(include_str!(
+            "../migrations/20260725000000_create_game_events.sql"
+        ))
+        .execute(&pool)
+        .await?;
         Ok(Self { pool })
     }
 
@@ -131,6 +149,8 @@ impl Store {
         } else {
             "active"
         };
+        let state_json = serde_json::to_string(room.state)?;
+        let mut transaction = self.pool.begin().await?;
         sqlx::query(
             r"
             INSERT INTO rooms (
@@ -145,7 +165,7 @@ impl Store {
         .bind(room.id)
         .bind(room.mode.as_str())
         .bind(status)
-        .bind(serde_json::to_string(room.state)?)
+        .bind(&state_json)
         .bind(room.player_one_name)
         .bind(hash_token(room.player_one_token))
         .bind(room.player_two_name)
@@ -161,8 +181,32 @@ impl Store {
                 ACTIVE_ROOM_TTL_SECONDS
             },
         )
-        .execute(&self.pool)
+        .execute(&mut *transaction)
         .await?;
+        sqlx::query(
+            r"
+            INSERT INTO game_events (
+                room_id, revision, deal_number, actor, event_type,
+                action_json, state_before_json, state_after_json,
+                created_at, expires_at
+            ) VALUES (?, 0, ?, 'system', 'room_created', NULL, NULL, ?, ?, ?)
+            ",
+        )
+        .bind(room.id)
+        .bind(i64::from(room.state.deal_number))
+        .bind(&state_json)
+        .bind(now)
+        .bind(now + GAME_EVENT_TTL_SECONDS)
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        tracing::info!(
+            event = "room_created",
+            room_id = room.id,
+            mode = room.mode.as_str(),
+            deal_number = room.state.deal_number,
+            "game room created"
+        );
         Ok(())
     }
 
@@ -230,7 +274,14 @@ impl Store {
                 Err(StoreError::Conflict)
             };
         }
-        self.load_room(room_id).await
+        let room = self.load_room(room_id).await?;
+        tracing::info!(
+            event = "friend_joined",
+            room_id,
+            revision = room.revision,
+            "second player joined game room"
+        );
+        Ok(room)
     }
 
     /// Applies one revision-checked game action and appends it to the audit log.
@@ -256,11 +307,32 @@ impl Store {
                 .ok_or(StoreError::NotFound)?;
         let revision: i64 = row.try_get("revision")?;
         if revision != expected_revision {
+            tracing::warn!(
+                event = "game_action_conflict",
+                room_id,
+                actor = %actor,
+                expected_revision,
+                actual_revision = revision,
+                action = action_kind(action),
+                "rejected stale game action"
+            );
             return Err(StoreError::Conflict);
         }
-        let state_json: String = row.try_get("state_json")?;
-        let mut state: MatchState = serde_json::from_str(&state_json)?;
-        state.apply(actor, action)?;
+        let state_before_json: String = row.try_get("state_json")?;
+        let mut state: MatchState = serde_json::from_str(&state_before_json)?;
+        let action_json = serde_json::to_string(&action)?;
+        if let Err(error) = state.apply(actor, action) {
+            tracing::warn!(
+                event = "game_action_rejected",
+                room_id,
+                actor = %actor,
+                revision,
+                action = action_kind(action),
+                error = %error,
+                "game rule rejected action"
+            );
+            return Err(error.into());
+        }
         let next_revision = revision + 1;
         let now = now_epoch();
         let status = if state.winner.is_some() {
@@ -268,6 +340,7 @@ impl Store {
         } else {
             "active"
         };
+        let state_after_json = serde_json::to_string(&state)?;
         let updated = sqlx::query(
             r"
             UPDATE rooms
@@ -276,7 +349,7 @@ impl Store {
             ",
         )
         .bind(next_revision)
-        .bind(serde_json::to_string(&state)?)
+        .bind(&state_after_json)
         .bind(status)
         .bind(now)
         .bind(now + ACTIVE_ROOM_TTL_SECONDS)
@@ -293,12 +366,90 @@ impl Store {
         .bind(room_id)
         .bind(next_revision)
         .bind(actor.to_string())
-        .bind(serde_json::to_string(&action)?)
+        .bind(&action_json)
         .bind(now)
         .execute(&mut *transaction)
         .await?;
+        sqlx::query(
+            r"
+            INSERT INTO game_events (
+                room_id, revision, deal_number, actor, event_type,
+                action_json, state_before_json, state_after_json,
+                created_at, expires_at
+            ) VALUES (?, ?, ?, ?, 'action', ?, ?, ?, ?, ?)
+            ",
+        )
+        .bind(room_id)
+        .bind(next_revision)
+        .bind(i64::from(state.deal_number))
+        .bind(actor.to_string())
+        .bind(&action_json)
+        .bind(&state_before_json)
+        .bind(&state_after_json)
+        .bind(now)
+        .bind(now + GAME_EVENT_TTL_SECONDS)
+        .execute(&mut *transaction)
+        .await?;
         transaction.commit().await?;
+        log_applied_action(room_id, next_revision, actor, action, &state);
         self.load_room(room_id).await
+    }
+
+    /// Loads the retained append-only event history for one game room.
+    ///
+    /// New events include authoritative state snapshots before and after every
+    /// action. Events imported from the original audit table retain their
+    /// actor, action, revision, and timestamp but do not have snapshots.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::NotFound`] when no retained history exists, or a
+    /// decoding/database error when an event cannot be read.
+    pub async fn game_history(&self, room_id: &str) -> Result<Vec<GameEvent>, StoreError> {
+        let rows = sqlx::query(
+            r"
+            SELECT revision, deal_number, actor, event_type, action_json,
+                   state_before_json, state_after_json, created_at
+            FROM game_events
+            WHERE room_id = ? AND expires_at > ?
+            ORDER BY revision, created_at, event_type
+            ",
+        )
+        .bind(room_id)
+        .bind(now_epoch())
+        .fetch_all(&self.pool)
+        .await?;
+        if rows.is_empty() {
+            return Err(StoreError::NotFound);
+        }
+        rows.into_iter()
+            .map(|row| {
+                let action_json: Option<String> = row.try_get("action_json")?;
+                let state_before_json: Option<String> = row.try_get("state_before_json")?;
+                let state_after_json: Option<String> = row.try_get("state_after_json")?;
+                let deal_number =
+                    u32::try_from(row.try_get::<i64, _>("deal_number")?).unwrap_or_default();
+                Ok(GameEvent {
+                    revision: row.try_get("revision")?,
+                    deal_number,
+                    actor: row.try_get("actor")?,
+                    event_type: row.try_get("event_type")?,
+                    action: action_json
+                        .as_deref()
+                        .map(serde_json::from_str)
+                        .transpose()?,
+                    state_before: state_before_json
+                        .as_deref()
+                        .map(serde_json::from_str)
+                        .transpose()?,
+                    state_after: state_after_json
+                        .as_deref()
+                        .map(serde_json::from_str)
+                        .transpose()?,
+                    created_at: row.try_get("created_at")?,
+                })
+            })
+            .collect()
     }
 
     /// Updates a player's coarse presence timestamp at most once per five seconds.
@@ -324,18 +475,78 @@ impl Store {
         Ok(())
     }
 
-    /// Deletes expired rooms and their cascaded action logs.
+    /// Deletes expired rooms and separately expired retained game events.
     ///
     /// # Errors
     ///
     /// Returns a database error when cleanup cannot be executed.
     pub async fn cleanup_expired(&self) -> Result<u64, StoreError> {
+        let now = now_epoch();
         let result = sqlx::query("DELETE FROM rooms WHERE expires_at <= ?")
-            .bind(now_epoch())
+            .bind(now)
             .execute(&self.pool)
             .await?;
+        let events = sqlx::query("DELETE FROM game_events WHERE expires_at <= ?")
+            .bind(now)
+            .execute(&self.pool)
+            .await?;
+        if result.rows_affected() > 0 || events.rows_affected() > 0 {
+            tracing::info!(
+                event = "game_history_cleanup",
+                rooms_deleted = result.rows_affected(),
+                events_deleted = events.rows_affected(),
+                "expired game data removed"
+            );
+        }
         Ok(result.rows_affected())
     }
+}
+
+const fn action_kind(action: Action) -> &'static str {
+    match action {
+        Action::Play {
+            announce_marriage: true,
+            declare: true,
+            ..
+        } => "play_marriage_and_declare",
+        Action::Play {
+            announce_marriage: true,
+            ..
+        } => "play_marriage",
+        Action::Play { .. } => "play",
+        Action::ExchangeTrump => "exchange_trump",
+        Action::CloseStock => "close_stock",
+        Action::Declare => "declare",
+        Action::NextDeal => "next_deal",
+    }
+}
+
+fn log_applied_action(
+    room_id: &str,
+    revision: i64,
+    actor: Seat,
+    action: Action,
+    state: &MatchState,
+) {
+    tracing::info!(
+        event = "game_action_applied",
+        room_id,
+        revision,
+        actor = %actor,
+        action = action_kind(action),
+        deal_number = state.deal_number,
+        card_points_one = state.deal.card_points[0],
+        card_points_two = state.deal.card_points[1],
+        pending_marriage_one = state.deal.pending_marriages[0],
+        pending_marriage_two = state.deal.pending_marriages[1],
+        tricks_one = state.deal.tricks_won[0],
+        tricks_two = state.deal.tricks_won[1],
+        leader = %state.deal.leader,
+        trick_cards = state.deal.trick.len(),
+        deal_finished = state.deal.result.is_some(),
+        match_finished = state.winner.is_some(),
+        "game action applied"
+    );
 }
 
 fn row_to_room(row: &sqlx::sqlite::SqliteRow) -> Result<Room, StoreError> {
@@ -425,11 +636,21 @@ mod tests {
             .unwrap();
         assert_eq!(updated.revision, 1);
         assert_eq!(updated.state.deal.played_cards, vec![card]);
+        let history = store.game_history("ABC123").await.unwrap();
+        assert_eq!(history.len(), 2);
+        assert_eq!(history[0].event_type, "room_created");
+        assert_eq!(history[1].event_type, "action");
+        assert!(history[1].state_before.is_some());
+        assert!(history[1].state_after.is_some());
+        assert!(matches!(history[1].action, Some(Action::Play { .. })));
         assert!(matches!(
             store
                 .apply_action("ABC123", 0, actor, Action::Declare)
                 .await,
             Err(StoreError::Conflict)
         ));
+        drop(store);
+        let reopened = Store::connect(&url).await.unwrap();
+        assert_eq!(reopened.game_history("ABC123").await.unwrap().len(), 2);
     }
 }

@@ -19,10 +19,11 @@ use topcoat::{
     session::{Config as SessionConfig, RouterBuilderSessionExt},
     view::{View, view},
 };
+use tracing_subscriber::EnvFilter;
 
 const HTMX_INTEGRITY: &str =
     "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V";
-const STYLES_VERSION: &str = "20260725-4";
+const STYLES_VERSION: &str = "20260725-5";
 
 #[derive(Clone)]
 struct App {
@@ -65,6 +66,7 @@ struct GameId(str);
 
 #[tokio::main]
 async fn main() {
+    init_tracing();
     let database_url =
         env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://sixty-six.db".to_owned());
     let public_base_url = env::var("PUBLIC_BASE_URL")
@@ -75,6 +77,25 @@ async fn main() {
     let store = Store::connect(&database_url)
         .await
         .expect("connect to SQLite and apply schema");
+    let arguments = env::args().collect::<Vec<_>>();
+    if arguments
+        .get(1)
+        .is_some_and(|argument| argument == "inspect")
+    {
+        let Some(room_id) = arguments.get(2) else {
+            eprintln!("usage: sixty-six inspect ROOM_ID");
+            std::process::exit(2);
+        };
+        let history = store
+            .game_history(room_id)
+            .await
+            .expect("load retained game history");
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&history).expect("serialize retained game history")
+        );
+        return;
+    }
 
     let cleanup_store = store.clone();
     tokio::spawn(async move {
@@ -90,6 +111,11 @@ async fn main() {
         public_base_url,
         secure_cookies,
     };
+    tracing::info!(
+        event = "server_start",
+        secure_cookies,
+        "starting Sixty-Six server"
+    );
     let router = Router::builder()
         .discover()
         .cookies()
@@ -97,6 +123,23 @@ async fn main() {
         .app_context(app)
         .build();
     topcoat::start(router).await.expect("serve Sixty-Six");
+}
+
+fn init_tracing() {
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("sixty_six=info,topcoat=info"));
+    if env::var("APP_ENV").is_ok_and(|value| value == "production") {
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .json()
+            .flatten_event(true)
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .compact()
+            .init();
+    }
 }
 
 fn app(cx: &Cx) -> &App {
@@ -359,10 +402,14 @@ async fn rules(cx: &Cx) -> Result {
                         <span>"+40 if hearts are trump"</span>
                     </div>
                 </div>
+                <div class="rule-note compact">
+                    <strong>"A marriage is your lead, not a separate step."</strong>
+                    <span>"Announcing it plays that King or Queen into the trick. Your opponent answers normally, and whoever wins leads next."</span>
+                </div>
                 <ul class="rule-checklist">
                     <li>"You must be leading the trick."</li>
                     <li>"Lead either the King or Queen while holding the other."</li>
-                    <li>"The bonus counts after you have won at least one trick."</li>
+                    <li>"Until you win a trick, the +20 or +40 stays pending."</li>
                     <li>"Marriages are unavailable once the stock is closed or empty."</li>
                 </ul>
                 <div class="trump-exchange">
@@ -538,7 +585,11 @@ async fn game_action(cx: &Cx, Form(form): Form<GameAction>) -> Result<Response> 
         .store
         .apply_action(room_id, form.revision, seat, action)
         .await;
-    action_response(cx, room_id, seat, result).await
+    let success_notice = result
+        .as_ref()
+        .ok()
+        .and_then(|updated| action_success_notice(action, seat, updated));
+    action_response(cx, room_id, seat, result, success_notice).await
 }
 
 #[route(POST "/games/{game_id}/bot")]
@@ -550,7 +601,7 @@ async fn bot_turn(cx: &Cx, Form(form): Form<BotTurn>) -> Result<Response> {
         || room.state.deal.result.is_some()
         || room.state.deal.active_player() != Seat::Two
     {
-        return action_response(cx, room_id, Seat::One, Ok(room)).await;
+        return action_response(cx, room_id, Seat::One, Ok(room), None).await;
     }
     let observation = Observation::for_player(&room.state, Seat::Two);
     let action = choose_action(
@@ -561,7 +612,7 @@ async fn bot_turn(cx: &Cx, Form(form): Form<BotTurn>) -> Result<Response> {
         .store
         .apply_action(room_id, form.revision, Seat::Two, action)
         .await;
-    action_response(cx, room_id, Seat::One, result).await
+    action_response(cx, room_id, Seat::One, result, None).await
 }
 
 async fn action_response(
@@ -569,12 +620,13 @@ async fn action_response(
     room_id: &str,
     seat: Seat,
     result: std::result::Result<Room, StoreError>,
+    success_notice: Option<String>,
 ) -> Result<Response> {
     if !hx_request(cx) {
         return see_other(&format!("/games/{room_id}")).into_response(cx);
     }
     let (room, notice): (Room, Option<String>) = match result {
-        Ok(room) => (room, None),
+        Ok(room) => (room, success_notice),
         Err(StoreError::Conflict) => (
             load_room_or_404(cx, room_id).await?,
             Some("The game moved on. Your board has been refreshed.".to_owned()),
@@ -588,6 +640,25 @@ async fn action_response(
     board_view(cx, &room, seat, notice.as_deref())
         .await?
         .into_response(cx)
+}
+
+fn action_success_notice(action: Action, seat: Seat, room: &Room) -> Option<String> {
+    let Action::Play {
+        card,
+        announce_marriage: true,
+        ..
+    } = action
+    else {
+        return None;
+    };
+    let value = room.state.deal.marriage_value(card)?;
+    if room.state.deal.pending_marriages[seat.index()] > 0 {
+        Some(format!(
+            "Marriage announced · +{value} pending. Win a trick to bank it."
+        ))
+    } else {
+        Some(format!("Marriage announced · +{value} card points."))
+    }
 }
 
 fn parse_action(form: &GameAction) -> Result<Action> {
@@ -711,6 +782,8 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
     let legal = deal.legal_cards(viewer);
     let show_scores =
         state.settings.score_visibility == ScoreVisibility::Visible || deal.result.is_some();
+    let viewer_pending = deal.pending_marriages[viewer.index()];
+    let opponent_pending = deal.pending_marriages[opponent.index()];
     let can_declare = viewer_turn
         && deal.trick.is_empty()
         && (state.settings.score_visibility == ScoreVisibility::Traditional
@@ -810,11 +883,17 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                     </span>
                                 }
                             </div>
-                            <span class="card-points">
+                            <span class="card-points point-summary">
                                 if show_scores {
-                                    ((deal.card_points[opponent.index()], " pts"))
+                                    <span>((deal.card_points[opponent.index()], " pts"))</span>
                                 } else {
-                                    "points hidden"
+                                    <span>"points hidden"</span>
+                                }
+                                if opponent_pending > 0 {
+                                    <strong class="pending-points">
+                                        <span>(("+", opponent_pending, " pending"))</span>
+                                        <small>"until they win a trick"</small>
+                                    </strong>
                                 }
                             </span>
                         </div>
@@ -897,11 +976,17 @@ async fn board_view(__cx: &Cx, room: &Room, viewer: Seat, notice: Option<&str>) 
                                     <strong>(status)</strong>
                                 </div>
                             </div>
-                            <span class="card-points">
+                            <span class="card-points point-summary">
                                 if show_scores {
-                                    ((deal.card_points[viewer.index()], " card points"))
+                                    <span>((deal.card_points[viewer.index()], " card points"))</span>
                                 } else {
-                                    "count your tricks"
+                                    <span>"count your tricks"</span>
+                                }
+                                if viewer_pending > 0 {
+                                    <strong class="pending-points">
+                                        <span>(("+", viewer_pending, " pending"))</span>
+                                        <small>"win a trick to bank"</small>
+                                    </strong>
                                 }
                             </span>
                         </div>
